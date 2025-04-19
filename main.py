@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 class ArUcoDetector:
     # change DICT_4X4_50 to DICT_6X6_250 for 6x6 markers, or DICT_5X5_100 for 5x5 markers, etc.
     def __init__(self, dictionary=cv2.aruco.DICT_4X4_50):
@@ -17,12 +18,42 @@ class ArUcoDetector:
     def release(self):
         self.cap.release()
         cv2.destroyAllWindows()
+    # This is a color detection function for traffic lights
+    def detect_traffic_light_color(self,frame):
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        red_lower1 = np.array([0, 100, 100])
+        red_upper1 = np.array([10, 255, 255])
+        red_lower2 = np.array([160, 100, 100])
+        red_upper2 = np.array([179, 255, 255])
 
-        
+        green_lower = np.array([40, 50, 50])
+        green_upper = np.array([80, 255, 255])
+
+        red_mask1 = cv2.inRange(hsv, red_lower1, red_upper1)
+        red_mask2 = cv2.inRange(hsv, red_lower2, red_upper2)
+        red_mask = cv2.bitwise_or(red_mask1, red_mask2)
+
+        green_mask = cv2.inRange(hsv, green_lower, green_upper)
+
+        kernel = np.ones((5, 5), np.uint8)
+        red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel)
+        green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_OPEN, kernel)
+
+        red_pixels = cv2.countNonZero(red_mask)
+        green_pixels = cv2.countNonZero(green_mask)
+        threshold = 500
+
+        if red_pixels > green_pixels and red_pixels > threshold:
+            return "Red"
+        elif green_pixels > red_pixels and green_pixels > threshold:
+            return "Green"
+        else:
+         return "None"
+
+
     # Placeholder for marker processing logic
     # Replace with actual processing code as needed
     def ProcessMarker(self, marker_id):
-        
         print(f"Processing marker ID: {marker_id}")
         
     def run(self):
